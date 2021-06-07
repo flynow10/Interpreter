@@ -1,0 +1,12 @@
+call output(72);
+call output(101);
+call output(108);
+call output(108);
+call output(111);
+call output(32);
+call output(87);
+call output(111);
+call output(114);
+call output(108);
+call output(100);
+call output(33);

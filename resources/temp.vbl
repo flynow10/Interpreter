@@ -1,0 +1,38 @@
+assign mod | 0;
+assign power | 0;
+task mod(a, b) {
+    assign temp | a / b;
+    assign mod | temp * b;
+    assign mod | a - mod;
+}
+task power(base, exponent)
+{
+    assign index1 | 1;
+    assign power | base;
+    loop(index1 < exponent)
+    {
+        assign power | power * base;
+        assign index1 | index1 + 1;
+    }
+}
+task outputNumber(number)
+{
+    assign count | 0;
+    assign tempNumber | number;
+    loop(tempNumber > 0)
+    {
+        assign tempNumber | tempNumber / 10;
+        assign count | count + 1;
+    }
+    assign index1 | count-1;
+    loop(index1 > 0)
+    {
+        call power(10, index1);
+        call mod(number/power, 10);
+        call output(mod + 48);
+        assign index1 | index1 - 1;
+    }
+    call mod(number/1, 10);
+    call output(mod + 48);
+    call output(10);
+}
