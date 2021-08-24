@@ -1,26 +1,26 @@
 package com.wagologies;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.io.IOException;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class Parser {
 
 //    ast             : block
-//    task_definition : TASK variable LPARENTHESES ( empty | ID ( COMMA ID )* ) RPARENTHESES LBRACKET block RBRACKET
+//    task_definition : TASK ( RETURNS | empty ) variable LPARENTHESES ( empty | ID ( COMMA ID )* ) RPARENTHESES LBRACKET block RBRACKET
 //    task_call       : CALL variable LPARENTHESES ( expr COMMA )* RPARENTHESES
 //    block           : ( statement )*
-//    statement       : (( task_call | assignment ) EOL ) | ( conditional | task_definition | loop )
+//    statement       : (( task_call | assignment | return ) EOL ) | ( conditional | task_definition | loop )
 //    assignment      : ASSIGN variable PIPE expr
+//    return          : RETURN expr
 //    expr            : term (( PLUS | MINUS ) term )*
 //    term            : factor (( MULTIPLY | DIVIDE ) term )*
-//    factor          : INTEGER | LPARENTHESES expr RPARENTHESES | variable
+//    factor          : INTEGER | LPARENTHESES expr RPARENTHESES | variable | task_call
 //    variable        : ID
 //    conditional     : CONDITION LPARENTHESES condition RPARENTHESES LBRACKET block RBRACKET
 //    condition       : expr ( EQUAL | GREATERTHAN | LESSTHAN ) expr
 //    loop            : LOOP LPARENTHESES condition RPARENTHESES LBRACKET block RBRACKET
+//    empty           :
     public List<Lexer.Token> tokens;
 
     public int currentTokenIndex;
@@ -82,6 +82,10 @@ public class Parser {
                 Node assignmentNode = Assignment();
                 Eat(Lexer.Token.Type.EOL);
                 return assignmentNode;
+            case RETURN:
+                Node returnNode = Return();
+                Eat(Lexer.Token.Type.EOL);
+                return returnNode;
             case CONDITION:
                 return Conditional();
             case TASK:
@@ -89,14 +93,14 @@ public class Parser {
             case LOOP:
                 return Loop();
         }
-        Error(Lexer.Token.Type.CALL, Lexer.Token.Type.ASSIGN, Lexer.Token.Type.CONDITION, Lexer.Token.Type.TASK, Lexer.Token.Type.LOOP);
+        Error(Lexer.Token.Type.CALL, Lexer.Token.Type.ASSIGN, Lexer.Token.Type.CONDITION, Lexer.Token.Type.TASK, Lexer.Token.Type.LOOP, Lexer.Token.Type.RETURN);
         return null;
     }
 
     //    task_call       : CALL variable LPARENTHESES ( | expr (COMMA expr)* ) RPARENTHESES
     public Node TaskCall()
     {
-        Eat(Lexer.Token.Type.CALL, Lexer.Token.Type.ASSIGN, Lexer.Token.Type.CONDITION, Lexer.Token.Type.TASK, Lexer.Token.Type.LOOP);
+        Eat(Lexer.Token.Type.CALL, Lexer.Token.Type.ASSIGN, Lexer.Token.Type.CONDITION, Lexer.Token.Type.TASK, Lexer.Token.Type.LOOP, Lexer.Token.Type.RETURN);
         Node variable = Variable();
         Eat(Lexer.Token.Type.LPARENTHESES);
         List<Node> parameters = new ArrayList<>();
@@ -116,7 +120,7 @@ public class Parser {
     //    assignment      : ASSIGN variable PIPE expr
     public Node Assignment()
     {
-        Eat(Lexer.Token.Type.ASSIGN, Lexer.Token.Type.CALL, Lexer.Token.Type.CONDITION, Lexer.Token.Type.TASK, Lexer.Token.Type.LOOP);
+        Eat(Lexer.Token.Type.ASSIGN, Lexer.Token.Type.CALL, Lexer.Token.Type.CONDITION, Lexer.Token.Type.TASK, Lexer.Token.Type.LOOP, Lexer.Token.Type.RETURN);
         Node variable = Variable();
         Eat(Lexer.Token.Type.PIPE);
         Node value = Expression();
@@ -126,7 +130,7 @@ public class Parser {
     //    conditional     : CONDITION LPARENTHESES condition RPARENTHESES LBRACKET block RBRACKET
     public Node Conditional()
     {
-        Eat(Lexer.Token.Type.CONDITION, Lexer.Token.Type.CALL, Lexer.Token.Type.ASSIGN, Lexer.Token.Type.TASK, Lexer.Token.Type.LOOP);
+        Eat(Lexer.Token.Type.CONDITION, Lexer.Token.Type.CALL, Lexer.Token.Type.ASSIGN, Lexer.Token.Type.TASK, Lexer.Token.Type.LOOP, Lexer.Token.Type.RETURN);
         Eat(Lexer.Token.Type.LPARENTHESES);
         Node condition = Condition();
         Eat(Lexer.Token.Type.RPARENTHESES);
@@ -139,7 +143,10 @@ public class Parser {
     //    task_definition : TASK variable LPARENTHESES ( empty | ID (COMMA ID)* ) RPARENTHESES LBRACKET block RBRACKET
     public Node TaskDefinition()
     {
-        Eat(Lexer.Token.Type.TASK, Lexer.Token.Type.CALL, Lexer.Token.Type.ASSIGN, Lexer.Token.Type.CONDITION, Lexer.Token.Type.LOOP);
+        Eat(Lexer.Token.Type.TASK, Lexer.Token.Type.CALL, Lexer.Token.Type.ASSIGN, Lexer.Token.Type.CONDITION, Lexer.Token.Type.LOOP, Lexer.Token.Type.RETURN);
+        boolean returns = getCurrentToken().type == Lexer.Token.Type.RETURNS;
+        if(returns)
+            Eat(Lexer.Token.Type.RETURNS);
         Node name = Variable();
         Eat(Lexer.Token.Type.LPARENTHESES);
         List<Node> parameters = new ArrayList<>();
@@ -156,7 +163,7 @@ public class Parser {
         Eat(Lexer.Token.Type.LBRACKET);
         Node body = Block();
         Eat(Lexer.Token.Type.RBRACKET);
-        return new AST.TaskDefinition(name, parameters, body);
+        return new AST.TaskDefinition(name, parameters, returns, body);
     }
 
     //    condition       : expr comparison expr
@@ -189,7 +196,7 @@ public class Parser {
     //    loop            : LOOP LPARENTHESES condition RPARENTHESES LBRACKET block RBRACKET
     public Node Loop()
     {
-        Eat(Lexer.Token.Type.LOOP, Lexer.Token.Type.CALL, Lexer.Token.Type.ASSIGN, Lexer.Token.Type.TASK, Lexer.Token.Type.CONDITION);
+        Eat(Lexer.Token.Type.LOOP, Lexer.Token.Type.CALL, Lexer.Token.Type.ASSIGN, Lexer.Token.Type.TASK, Lexer.Token.Type.CONDITION, Lexer.Token.Type.RETURN);
         Eat(Lexer.Token.Type.LPARENTHESES);
         Node condition = Condition();
         Eat(Lexer.Token.Type.RPARENTHESES);
@@ -197,6 +204,13 @@ public class Parser {
         Node body = Block();
         Eat(Lexer.Token.Type.RBRACKET);
         return new AST.Loop(condition, body);
+    }
+
+    //    return          : RETURN expr
+    public Node Return()
+    {
+        Eat(Lexer.Token.Type.RETURN, Lexer.Token.Type.LOOP, Lexer.Token.Type.CALL, Lexer.Token.Type.ASSIGN, Lexer.Token.Type.TASK, Lexer.Token.Type.CONDITION);
+        return new AST.Return(Expression());
     }
 
     //    variable        : ID
@@ -260,28 +274,26 @@ public class Parser {
         return node;
     }
 
-    //    factor          : INTEGER | LPARENTHESES expr RPARENTHESES | variable
+    //    factor          : INTEGER | LPARENTHESES expr RPARENTHESES | variable | task_call
     public Node Factor()
     {
         Lexer.Token token = getCurrentToken();
-        if(getCurrentToken().type == Lexer.Token.Type.NUMBER)
-        {
-            Eat(Lexer.Token.Type.NUMBER, Lexer.Token.Type.LPARENTHESES);
-            return new AST.Number(Integer.parseInt(token.value));
-        }
-        else if(getCurrentToken().type == Lexer.Token.Type.LPARENTHESES){
-            Eat(Lexer.Token.Type.LPARENTHESES, Lexer.Token.Type.NUMBER);
-            Node node = Expression();
-            Eat(Lexer.Token.Type.RPARENTHESES);
-            return node;
-        }
-        else if(getCurrentToken().type == Lexer.Token.Type.ID) {
-            return Variable();
-        }
-        else
-        {
-            Error(Lexer.Token.Type.NUMBER, Lexer.Token.Type.LPARENTHESES);
-            return null;
+        switch (getCurrentToken().type) {
+            case NUMBER:
+                Eat(Lexer.Token.Type.NUMBER, Lexer.Token.Type.LPARENTHESES);
+                return new AST.Number(Integer.parseInt(token.value));
+            case LPARENTHESES:
+                Eat(Lexer.Token.Type.LPARENTHESES, Lexer.Token.Type.NUMBER);
+                Node node = Expression();
+                Eat(Lexer.Token.Type.RPARENTHESES);
+                return node;
+            case ID:
+                return Variable();
+            case CALL:
+                return TaskCall();
+            default:
+                Error(Lexer.Token.Type.NUMBER, Lexer.Token.Type.LPARENTHESES);
+                return null;
         }
     }
 
@@ -305,6 +317,22 @@ public class Parser {
             this.start = start;
         }
 
+        @Override
+        public Object Walk(Scope scope) {
+            Object node = start.Walk(scope);
+            if(node != null)
+            {
+                throw new RuntimeException("Return statement can only be used inside of a function!");
+            }
+            return null;
+        }
+
+        @Override
+        public void Output(int level) {
+            System.out.println("AST");
+            start.Output(level+1);
+        }
+
         public static class TaskDefinition implements Node {
 
             public Node name;
@@ -312,10 +340,11 @@ public class Parser {
             public Node body;
             public boolean returns;
 
-            public TaskDefinition(Node name, List<Node> parameters, Node body)
+            public TaskDefinition(Node name, List<Node> parameters, boolean returns, Node body)
             {
                 this.name = name;
                 this.parameters = parameters;
+                this.returns = returns;
                 this.body = body;
             }
 
@@ -325,7 +354,7 @@ public class Parser {
                 for (int i = 0; i < parameters.length; i++) {
                     parameters[i] = ((Name)this.parameters.get(i)).name;
                 }
-                scope.functions.put(((Name)name).name,new Scope.FunctionData(body, parameters));
+                scope.functions.put(((Name)name).name,new Scope.FunctionData(body, returns, parameters));
                 return null;
             }
 
@@ -335,7 +364,7 @@ public class Parser {
                 for (int i = 0; i < level; i++) {
                     output.append("  ");
                 }
-                System.out.println(output + "Task Definition");
+                System.out.println(output + "Task Definition" + (returns ? " (returns)" : ""));
                 if(parameters.size() > 0) {
                     System.out.println(output + "  Parameters:");
                 }
@@ -345,18 +374,6 @@ public class Parser {
                 System.out.println(output + "  Body:");
                 body.Output(level + 2);
             }
-        }
-
-        @Override
-        public Object Walk(Scope scope) {
-            start.Walk(scope);
-            return null;
-        }
-
-        @Override
-        public void Output(int level) {
-            System.out.println("AST");
-            start.Output(level+1);
         }
 
         public static class Block implements Node {
@@ -370,16 +387,25 @@ public class Parser {
             @Override
             public Object Walk(Scope scope) {
                 for (Node node : nodes) {
-                    node.Walk(scope);
+                    Object returnStatement = node.Walk(scope);
+                    if(returnStatement != null) {
+                        if (!(node instanceof TaskCall)) {
+                            return returnStatement;
+                        }
+                    }
                 }
                 return null;
             }
 
             @Override
             public void Output(int level) {
+                StringBuilder output = new StringBuilder();
+                for (int i = 0; i < level; i++) {
+                    output.append("  ");
+                }
                 if(nodes.size() < 1)
                 {
-                    System.out.println("Empty");
+                    System.out.println(output + "Empty");
                 }
                 for (Node node : nodes) {
                     node.Output(level);
@@ -443,8 +469,7 @@ public class Parser {
             }
         }
 
-        public static class Comparison implements Node
-        {
+        public static class Comparison implements Node {
 
             public Node left;
             public Operator operator;
@@ -521,7 +546,7 @@ public class Parser {
                 if(condition)
                 {
                     Scope innerScope = new Scope(scope.global, scope);
-                    body.Walk(innerScope);
+                    return body.Walk(innerScope);
                 }
                 return null;
             }
@@ -653,8 +678,12 @@ public class Parser {
                 for (int i = 0; i < functionData.parameters.size(); i++) {
                     taskScope.variables.put(functionData.parameters.get(i), new Scope.Variable((Integer) parameters.get(i).Walk(scope)));
                 }
-                functionData.ast.Walk(taskScope);
-                return null;
+                Object returnStatement = functionData.ast.Walk(taskScope);
+                if(!functionData.returns && returnStatement != null)
+                    throw new RuntimeException("Function \"" + ((Name)variable).name + "\" is not specified to return, but a return value was provided!");
+                if(functionData.returns && returnStatement == null)
+                    throw new RuntimeException("Function \"" + ((Name)variable).name + "\" is specified to return, but no return value was provided!");
+                return returnStatement;
             }
 
             @Override
@@ -673,8 +702,7 @@ public class Parser {
             }
         }
 
-        public static class Loop implements Node
-        {
+        public static class Loop implements Node {
             public Node condition;
             public Node body;
 
@@ -697,7 +725,11 @@ public class Parser {
                 {
                     Scope innerScope = new Scope(scope.global, scope);
                     innerScope.variables.put("index", new Scope.Variable(index));
-                    body.Walk(innerScope);
+                    Object returnStatement = body.Walk(innerScope);
+                    if(returnStatement != null)
+                    {
+                        return returnStatement;
+                    }
                     conditionObject = this.condition.Walk(scope);
                     if(!(conditionObject instanceof Boolean))
                     {
@@ -711,20 +743,111 @@ public class Parser {
 
             @Override
             public void Output(int level) {
-
+                StringBuilder output = new StringBuilder();
+                for (int i = 0; i < level; i++) {
+                    output.append("  ");
+                }
+                System.out.println(output + "Loop:");
+                condition.Output(level+1);
+                body.Output(level+1);
             }
         }
-        public static class Output implements Node
-        {
+
+        public static class Output implements Node {
+
+            public Type type;
+
+            public Output()
+            {
+                type = Type.CHAR;
+            }
+            public Output(Type type)
+            {
+                this.type = type;
+            }
+
+            public enum Type {
+                CHAR,
+                INT
+            }
             @Override
             public Object Walk(Scope scope) {
-                System.out.print((char)scope.getVariable("output").value);
+                switch (type)
+                {
+                    case CHAR:
+                        System.out.print((char)scope.getVariable("output").value);
+                        break;
+                    case INT:
+                        System.out.print(scope.getVariable("output").value);
+                        break;
+                }
                 return null;
             }
 
             @Override
             public void Output(int level) {
 
+            }
+        }
+
+        public static class Input implements Node {
+            public Input()
+            {
+
+            }
+            @Override
+            public Object Walk(Scope scope) {
+                try {
+                    return (int)(char) System.in.read();
+                } catch (IOException e) {
+                    throw new RuntimeException("Failed to read input!");
+                }
+            }
+
+            @Override
+            public void Output(int level) {
+
+            }
+        }
+
+        public static class Random implements Node {
+            public Random()
+            {
+
+            }
+
+            @Override
+            public Object Walk(Scope scope) {
+                return (int) (Math.random()*(scope.getVariable("max").value-scope.getVariable("min").value))+scope.getVariable("min").value;
+            }
+
+            @Override
+            public void Output(int level) {
+
+            }
+        }
+
+        public static class Return implements Node {
+
+            public Node expression;
+
+            public Return(Node expression) {
+                this.expression = expression;
+            }
+
+            @Override
+            public Object Walk(Scope scope) {
+                return expression.Walk(scope);
+            }
+
+            @Override
+            public void Output(int level) {
+                StringBuilder output = new StringBuilder();
+                for (int i = 0; i < level; i++) {
+                    output.append("  ");
+                }
+                System.out.println(output + "Return:");
+                expression.Output(level + 1);
             }
         }
     }

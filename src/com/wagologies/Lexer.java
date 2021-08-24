@@ -94,7 +94,9 @@ public class Lexer {
             EQUAL,
             GREATERTHAN,
             LESSTHAN,
-            LOOP
+            LOOP,
+            RETURNS,
+            RETURN
         }
     }
 }

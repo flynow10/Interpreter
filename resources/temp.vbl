@@ -1,10 +1,6 @@
 assign mod | 0;
 assign power | 0;
-task mod(a, b) {
-    assign temp | a / b;
-    assign mod | temp * b;
-    assign mod | a - mod;
-}
+
 task power(base, exponent)
 {
     assign index1 | 1;

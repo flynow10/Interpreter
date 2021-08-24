@@ -46,6 +46,8 @@ public class Interpreter {
             add(new Lexer.TokenRule(Lexer.Token.Type.ASSIGN, Pattern.compile("^assign ")));
             add(new Lexer.TokenRule(Lexer.Token.Type.CONDITION, Pattern.compile("^condition")));
             add(new Lexer.TokenRule(Lexer.Token.Type.LOOP, Pattern.compile("^loop")));
+            add(new Lexer.TokenRule(Lexer.Token.Type.RETURNS, Pattern.compile("^returns ")));
+            add(new Lexer.TokenRule(Lexer.Token.Type.RETURN, Pattern.compile("^return ")));
             add(new Lexer.TokenRule(Lexer.Token.Type.EQUAL, Pattern.compile("^=")));
             add(new Lexer.TokenRule(Lexer.Token.Type.GREATERTHAN, Pattern.compile("^>")));
             add(new Lexer.TokenRule(Lexer.Token.Type.LESSTHAN, Pattern.compile("^<")));
@@ -55,7 +57,10 @@ public class Interpreter {
         Parser.AST ast = Parser.Parse(tokens);
         Scope scope = new Scope();
         scope.global = scope;
-        scope.functions.put("output", new Scope.FunctionData(new Parser.AST.Output(), "output"));
+        scope.functions.put("output", new Scope.FunctionData(new Parser.AST.Output(), false, "output"));
+        scope.functions.put("outputNumber", new Scope.FunctionData(new Parser.AST.Output(Parser.AST.Output.Type.INT), false, "output"));
+        scope.functions.put("input", new Scope.FunctionData(new Parser.AST.Input(), true));
+        scope.functions.put("random", new Scope.FunctionData(new Parser.AST.Random(), true, "min", "max"));
         ast.Walk(scope);
     }
 

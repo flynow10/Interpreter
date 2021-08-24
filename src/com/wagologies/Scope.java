@@ -24,10 +24,12 @@ public class Scope {
 
     public static class FunctionData {
         public Parser.Node ast;
+        public boolean returns;
         public List<String> parameters = new ArrayList<>();
-        public FunctionData(Parser.Node ast,  String... parameters)
+        public FunctionData(Parser.Node ast, boolean returns, String... parameters)
         {
             this.ast = ast;
+            this.returns = returns;
             this.parameters.addAll(Arrays.asList(parameters));
         }
     }
@@ -63,7 +65,7 @@ public class Scope {
             }
             currentScope = currentScope.parent;
         }
-        if(this.global.functions.containsKey(name))
+        if(this.global.variables.containsKey(name))
         {
             return this.global.variables.get(name);
         }
