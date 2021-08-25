@@ -96,7 +96,14 @@ public class Lexer {
             LESSTHAN,
             LOOP,
             RETURNS,
-            RETURN
+            RETURN,
+            COMPARISON,
+            STRING_TYPE,
+            NUMBER_TYPE,
+            TRALSE_TYPE,
+            STRING,
+            FALSE,
+            TRUE
         }
     }
 }

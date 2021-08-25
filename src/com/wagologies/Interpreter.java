@@ -1,5 +1,11 @@
 package com.wagologies;
 
+import com.wagologies.Parser.Nodes.AST;
+import com.wagologies.Parser.Nodes.Input;
+import com.wagologies.Parser.Nodes.Output;
+import com.wagologies.Parser.Nodes.Random;
+import com.wagologies.Parser.Parser;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -45,22 +51,29 @@ public class Interpreter {
             add(new Lexer.TokenRule(Lexer.Token.Type.CALL, Pattern.compile("^call ")));
             add(new Lexer.TokenRule(Lexer.Token.Type.ASSIGN, Pattern.compile("^assign ")));
             add(new Lexer.TokenRule(Lexer.Token.Type.CONDITION, Pattern.compile("^condition")));
+            add(new Lexer.TokenRule(Lexer.Token.Type.COMPARISON, Pattern.compile("^comparison")));
             add(new Lexer.TokenRule(Lexer.Token.Type.LOOP, Pattern.compile("^loop")));
             add(new Lexer.TokenRule(Lexer.Token.Type.RETURNS, Pattern.compile("^returns ")));
             add(new Lexer.TokenRule(Lexer.Token.Type.RETURN, Pattern.compile("^return ")));
+            add(new Lexer.TokenRule(Lexer.Token.Type.STRING_TYPE, Pattern.compile("^string")));
+            add(new Lexer.TokenRule(Lexer.Token.Type.NUMBER_TYPE, Pattern.compile("^number")));
+            add(new Lexer.TokenRule(Lexer.Token.Type.TRALSE_TYPE, Pattern.compile("^tralse")));
+            add(new Lexer.TokenRule(Lexer.Token.Type.FALSE, Pattern.compile("^false")));
+            add(new Lexer.TokenRule(Lexer.Token.Type.TRUE, Pattern.compile("^true")));
             add(new Lexer.TokenRule(Lexer.Token.Type.EQUAL, Pattern.compile("^=")));
             add(new Lexer.TokenRule(Lexer.Token.Type.GREATERTHAN, Pattern.compile("^>")));
             add(new Lexer.TokenRule(Lexer.Token.Type.LESSTHAN, Pattern.compile("^<")));
+            add(new Lexer.TokenRule(Lexer.Token.Type.STRING, Pattern.compile("^\"(?:[^\"\\\\]|\\\\.)*\"")));
             add(new Lexer.TokenRule(Lexer.Token.Type.ID, Pattern.compile("^[a-zA-Z_][a-zA-Z_0-9]*")));
             add(new Lexer.TokenRule(Lexer.Token.Type.NUMBER, Pattern.compile("^[0-9]+")));
         }}, true);
-        Parser.AST ast = Parser.Parse(tokens);
+        AST ast = Parser.Parse(tokens);
         Scope scope = new Scope();
         scope.global = scope;
-        scope.functions.put("output", new Scope.FunctionData(new Parser.AST.Output(), false, "output"));
-        scope.functions.put("outputNumber", new Scope.FunctionData(new Parser.AST.Output(Parser.AST.Output.Type.INT), false, "output"));
-        scope.functions.put("input", new Scope.FunctionData(new Parser.AST.Input(), true));
-        scope.functions.put("random", new Scope.FunctionData(new Parser.AST.Random(), true, "min", "max"));
+        scope.functions.put("output", new Scope.FunctionData(new Output(), false, new Scope.Variable("output", Parser.Type.STRING)));
+        scope.functions.put("outputNumber", new Scope.FunctionData(new Output(), false, new Scope.Variable("output", Parser.Type.NUMBER)));
+        scope.functions.put("input", new Scope.FunctionData(new Input(), true));
+        scope.functions.put("random", new Scope.FunctionData(new Random(), true, new Scope.Variable("min", Parser.Type.NUMBER), new Scope.Variable("max", Parser.Type.NUMBER)));
         ast.Walk(scope);
     }
 

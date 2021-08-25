@@ -1,5 +1,8 @@
 package com.wagologies;
 
+import com.wagologies.Parser.Node;
+import com.wagologies.Parser.Parser;
+
 import java.util.*;
 
 public class Scope {
@@ -23,10 +26,10 @@ public class Scope {
     }
 
     public static class FunctionData {
-        public Parser.Node ast;
+        public Node ast;
         public boolean returns;
-        public List<String> parameters = new ArrayList<>();
-        public FunctionData(Parser.Node ast, boolean returns, String... parameters)
+        public List<Variable> parameters = new ArrayList<>();
+        public FunctionData(Node ast, boolean returns, Variable... parameters)
         {
             this.ast = ast;
             this.returns = returns;
@@ -35,10 +38,12 @@ public class Scope {
     }
 
     public static class Variable {
-        public int value;
-        public Variable(int value)
+        public Object value;
+        public Parser.Type type;
+        public Variable(Object value, Parser.Type type)
         {
             this.value = value;
+            this.type = type;
         }
     }
 
