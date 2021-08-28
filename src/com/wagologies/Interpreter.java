@@ -1,9 +1,6 @@
 package com.wagologies;
 
-import com.wagologies.Parser.Nodes.AST;
-import com.wagologies.Parser.Nodes.Input;
-import com.wagologies.Parser.Nodes.Output;
-import com.wagologies.Parser.Nodes.Random;
+import com.wagologies.Parser.Nodes.*;
 import com.wagologies.Parser.Parser;
 
 import java.io.BufferedReader;
@@ -55,9 +52,9 @@ public class Interpreter {
             add(new Lexer.TokenRule(Lexer.Token.Type.LOOP, Pattern.compile("^loop")));
             add(new Lexer.TokenRule(Lexer.Token.Type.RETURNS, Pattern.compile("^returns ")));
             add(new Lexer.TokenRule(Lexer.Token.Type.RETURN, Pattern.compile("^return ")));
-            add(new Lexer.TokenRule(Lexer.Token.Type.STRING_TYPE, Pattern.compile("^string")));
-            add(new Lexer.TokenRule(Lexer.Token.Type.NUMBER_TYPE, Pattern.compile("^number")));
-            add(new Lexer.TokenRule(Lexer.Token.Type.TRALSE_TYPE, Pattern.compile("^tralse")));
+            add(new Lexer.TokenRule(Lexer.Token.Type.STRING_TYPE, Pattern.compile("^string \\|")));
+            add(new Lexer.TokenRule(Lexer.Token.Type.NUMBER_TYPE, Pattern.compile("^number \\|")));
+            add(new Lexer.TokenRule(Lexer.Token.Type.TRALSE_TYPE, Pattern.compile("^tralse \\|")));
             add(new Lexer.TokenRule(Lexer.Token.Type.FALSE, Pattern.compile("^false")));
             add(new Lexer.TokenRule(Lexer.Token.Type.TRUE, Pattern.compile("^true")));
             add(new Lexer.TokenRule(Lexer.Token.Type.EQUAL, Pattern.compile("^=")));
@@ -71,9 +68,14 @@ public class Interpreter {
         Scope scope = new Scope();
         scope.global = scope;
         scope.functions.put("output", new Scope.FunctionData(new Output(), false, new Scope.Variable("output", Parser.Type.STRING)));
-        scope.functions.put("outputNumber", new Scope.FunctionData(new Output(), false, new Scope.Variable("output", Parser.Type.NUMBER)));
         scope.functions.put("input", new Scope.FunctionData(new Input(), true));
         scope.functions.put("random", new Scope.FunctionData(new Random(), true, new Scope.Variable("min", Parser.Type.NUMBER), new Scope.Variable("max", Parser.Type.NUMBER)));
+        scope.functions.put("parseNumber", new Scope.FunctionData(new Converter(Converter.ConvertType.PARSENUMBER), true, new Scope.Variable("value", Parser.Type.STRING)));
+        scope.functions.put("tralseToNumber", new Scope.FunctionData(new Converter(Converter.ConvertType.TRALSE2NUMBER), true, new Scope.Variable("value", Parser.Type.TRALSE)));
+        scope.functions.put("numberToTralse", new Scope.FunctionData(new Converter(Converter.ConvertType.NUMBER2TRALSE), true, new Scope.Variable("value", Parser.Type.NUMBER)));
+        scope.functions.put("numberToString", new Scope.FunctionData(new Converter(Converter.ConvertType.NUMBER2STRING), true, new Scope.Variable("value", Parser.Type.NUMBER)));
+        scope.functions.put("splitString", new Scope.FunctionData(new SplitString(), true, new Scope.Variable("string", Parser.Type.STRING), new Scope.Variable("index", Parser.Type.NUMBER)));
+        scope.functions.put("concat", new Scope.FunctionData(new Concat(), true, new Scope.Variable("string", Parser.Type.STRING), new Scope.Variable("joiningString", Parser.Type.STRING)));
         ast.Walk(scope);
     }
 

@@ -10,11 +10,11 @@ import java.util.stream.Collectors;
 public class Parser {
 
 //    ast             : block
-//    task_definition : TASK ( RETURNS | empty ) variable LPARENTHESES ( empty | type PIPE ID ( COMMA type PIPE ID )* ) RPARENTHESES LBRACKET block RBRACKET
+//    task_definition : TASK ( RETURNS | empty ) variable LPARENTHESES ( empty | type ID ( COMMA type PIPE ID )* ) RPARENTHESES LBRACKET block RBRACKET
 //    task_call       : CALL variable LPARENTHESES ( expr COMMA )* RPARENTHESES
 //    block           : ( statement )*
 //    statement       : (( task_call | assignment | return ) EOL ) | ( conditional | task_definition | loop )
-//    assignment      : ASSIGN variable PIPE type PIPE expr
+//    assignment      : ASSIGN variable PIPE type expr
 //    return          : RETURN expr
 //    expr            : term (( PLUS | MINUS ) term )* | STRING | tralse
 //    term            : factor (( MULTIPLY | DIVIDE ) term )*
@@ -23,7 +23,7 @@ public class Parser {
 //    conditional     : CONDITION LPARENTHESES expr RPARENTHESES LBRACKET block RBRACKET
 //    comparison      : COMPARISON LPARENTHESES expr ( EQUAL | GREATERTHAN | LESSTHAN ) expr RPARENTHESES
 //    loop            : LOOP LPARENTHESES expr RPARENTHESES LBRACKET block RBRACKET
-//    type            : STRING_TYPE | INTEGER_TYPE | TRALSE_TYPE
+//    type            : STRING_TYPE | INTEGER_TYPE | TRALSE_TYPE |
 //    tralse          : TRUE | FALSE | condition
 //    empty           :
     public List<Lexer.Token> tokens;
@@ -129,7 +129,6 @@ public class Parser {
         Node variable = Variable();
         Eat(Lexer.Token.Type.PIPE);
         Node type = Type();
-        Eat(Lexer.Token.Type.PIPE);
         Node value = Expression();
         return new Assignment(variable, type, value);
     }
@@ -156,11 +155,10 @@ public class Parser {
             Eat(Lexer.Token.Type.RETURNS);
         Node name = Variable();
         Eat(Lexer.Token.Type.LPARENTHESES);
-        HashMap<Node, Node> parameterTypeDictionary = new HashMap<>();
+        LinkedHashMap<Node, Node> parameterTypeDictionary = new LinkedHashMap<>();
         if(getCurrentToken().type != Lexer.Token.Type.RPARENTHESES)
         {
             Node type = Type();
-            Eat(Lexer.Token.Type.PIPE);
             Node variable = Variable();
             parameterTypeDictionary.put(variable, type);
         }

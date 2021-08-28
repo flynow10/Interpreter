@@ -28,12 +28,12 @@ public class Scope {
     public static class FunctionData {
         public Node ast;
         public boolean returns;
-        public List<Variable> parameters = new ArrayList<>();
+        public Variable[] parameters;
         public FunctionData(Node ast, boolean returns, Variable... parameters)
         {
             this.ast = ast;
             this.returns = returns;
-            this.parameters.addAll(Arrays.asList(parameters));
+            this.parameters = parameters;
         }
     }
 

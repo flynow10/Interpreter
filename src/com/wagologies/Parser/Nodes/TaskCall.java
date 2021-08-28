@@ -23,18 +23,18 @@ public class TaskCall implements Node {
         {
             throw new RuntimeException("Function \"" + ((Name)variable).name + "\" does not exist!");
         }
-        if(parameters.size() != functionData.parameters.size())
+        if(parameters.size() != functionData.parameters.length)
         {
             throw new RuntimeException("Trying to call function with incorrect parameters!");
         }
         Scope taskScope = new Scope(scope.global, null);
-        for (int i = 0; i < functionData.parameters.size(); i++) {
+        for (int i = 0; i < functionData.parameters.length; i++) {
             Object value = parameters.get(i).Walk(scope);
-            if(!(functionData.parameters.get(i).type.clazz.isInstance(value)))
+            if(!(functionData.parameters[i].type.clazz.isInstance(value)))
             {
-                throw new RuntimeException("Incompatible Types! The function \""+ ((Name)variable).name +"\" was expecting a " + functionData.parameters.get(i).type.name() + " for it's "+ Parser.formatNumber(i+1) +" parameter!");
+                throw new RuntimeException("Incompatible Types! The function \""+ ((Name)variable).name +"\" was expecting a " + functionData.parameters[i].type.name() + " for it's "+ Parser.formatNumber(i+1) +" parameter!");
             }
-            taskScope.variables.put((String) functionData.parameters.get(i).value, new Scope.Variable(value, functionData.parameters.get(i).type));
+            taskScope.variables.put((String) functionData.parameters[i].value, new Scope.Variable(value, functionData.parameters[i].type));
         }
         Object returnStatement = functionData.ast.Walk(taskScope);
         if(!functionData.returns && returnStatement != null)
