@@ -1,0 +1,58 @@
+task printBottle(number | bottle)
+{
+    condition(comparison(bottle = 0))
+    {
+        call output("No more bottles of beer on the wall, no more bottles of beer.\n
+Go to the store and buy some more, 99 bottles of beer on the wall.\n\n");
+    }
+    condition(comparison(bottle > 0))
+    {
+        assign s | string | "s";
+        condition(comparison(bottle = 1))
+        {
+            assign s | string | "";
+        }
+        assign bottleString | string |
+            call concat(call numberToString(bottle), call concat(" bottle", s));
+        assign s | string | "s";
+        condition(comparison(bottle - 1 = 1))
+        {
+            assign s | string | "";
+        }
+        assign oneLessString | string |
+            call concat(call numberToString(bottle -1), call concat(" bottle", s));
+        condition(comparison(bottle - 1 = 0))
+        {
+            assign oneLessString | string | "no more";
+        }
+        call output(
+            call concat(
+                bottleString,
+                call concat(
+                    call concat(
+                        " of beer on the wall, ",
+                        bottleString),
+                    call concat(
+                        " of beer.\nTake one down and pass it around, ",
+                        call concat(
+                            oneLessString,
+                            " of beer on the wall.\n\n"
+                        )
+                    )
+                )
+            )
+        );
+    }
+}
+
+assign walls | number | 0;
+loop(true)
+{
+    assign bottles | number | 99;
+    loop(comparison(bottles > 0-1))
+    {
+        call printBottle(bottles);
+        assign bottles | number | bottles - 1;
+    }
+    assign walls | number | walls + 1;
+}

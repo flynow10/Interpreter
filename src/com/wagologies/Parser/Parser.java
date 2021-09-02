@@ -212,7 +212,7 @@ public class Parser {
     {
         Eat(Lexer.Token.Type.LOOP, Lexer.Token.Type.CALL, Lexer.Token.Type.ASSIGN, Lexer.Token.Type.TASK, Lexer.Token.Type.CONDITION, Lexer.Token.Type.RETURN);
         Eat(Lexer.Token.Type.LPARENTHESES);
-        Node condition = Comparison();
+        Node condition = Expression();
         Eat(Lexer.Token.Type.RPARENTHESES);
         Eat(Lexer.Token.Type.LBRACKET);
         Node body = Block();
